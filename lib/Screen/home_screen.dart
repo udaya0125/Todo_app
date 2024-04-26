@@ -31,58 +31,71 @@ class _HomeScreenState extends State<HomeScreenPage>{
         centerTitle: true,
       ),
      
-      // to add the list of items
+      // To add the list of items
 
       body: Visibility(
         visible: isLoading,
-        child:  Center(
+        child: Center(
           child: CircularProgressIndicator(),
         ),
         replacement: RefreshIndicator(
           onRefresh: fetchTodos,
-          child: ListView.builder(
-            itemCount: items.length,
-            itemBuilder: (context, index){
-              final item = items[index] as Map;
-              final id = item['_id'] as String;
-              return ListTile(
-                leading: CircleAvatar(
-                  child: Text(
-                    '${index + 1}'
-                    ),
-                    ),
-                title: Text(item['title']),
-                subtitle: Text(item['description']),
-                trailing: PopupMenuButton(
-                  onSelected: (value){
-                    if (value == 'edit'){
-                      //navigate to edit screen
-                      navigateToEditTaskScreen();
-                    }
-                    else if (value == 'delete'){
-                      //delete the item
-                      deleteById(id);
-
-
-                    }
-                  
-                  },
-                  itemBuilder: (context){
-                    return [
-                    const  PopupMenuItem(
-                        child: Text('Edit'),
-                        value: 'edit',
+          child: Visibility(
+            visible: items.isNotEmpty,
+            replacement: Center(
+              child: Text('No items found',
+              style: Theme.of(context).textTheme.headline3,
+              
+              ),
+            ),
+            child: ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index){
+                final item = items[index] as Map;
+                final id = item['_id'] as String;
+                return ListTile(
+                  leading: CircleAvatar(
+                    child: Text(
+                      '${index + 1}'
                       ),
-                      
-                   const   PopupMenuItem(
-                        child: Text('Delete'),
-                        value: 'delete',
                       ),
-                    ];
-                  },
-                ),
-              );
-            },
+                  title: Text(item['title']),
+                  subtitle: Text(item['description']),
+                  trailing: PopupMenuButton(
+                    onSelected: (value){
+                      if (value == 'edit'){
+            
+                        //navigate to edit screen
+            
+                        navigateToEditTaskScreen(item);
+                      }
+                      else if (value == 'delete'){
+                        
+                        //delete the item
+                        
+                        deleteById(id);
+            
+            
+                      }
+                    
+                    },
+                    itemBuilder: (context){
+                      return [
+                      const  PopupMenuItem(
+                          child: Text('Edit'),
+                          value: 'edit',
+                        ),
+                        
+                     const   PopupMenuItem(
+                          child: Text('Delete'),
+                          value: 'delete',
+                        ),
+                      ];
+                    },
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -92,28 +105,46 @@ class _HomeScreenState extends State<HomeScreenPage>{
       ),
     );
   }
-void navigateToEditTaskScreen(){
+
+  // For Navigating the task to edit function
+
+Future<void> navigateToEditTaskScreen(Map item)async{
     final route = MaterialPageRoute(
       builder:
-     (context)=>TaskScreenPage(),
+     (context)=>TaskScreenPage(todo: item),
      );
-      Navigator.push(context, route);
+     await Navigator.push(context, route);
+      setState(() {
+        isLoading = true;
+      });
+      fetchTodos();
   }
-  void navigateToAddTaskScreen(){
+
+  //Navigate the page to Add task 
+
+ Future <void> navigateToAddTaskScreen()async{
     final route = MaterialPageRoute(
       builder:
      (context)=>TaskScreenPage(),
      );
-      Navigator.push(context, route);
+     await Navigator.push(context, route);
+     setState(() {
+       isLoading = true;
+     });
+     fetchTodos();
   }
 
   Future<void>deleteById(String id)async{
+
     //Delete the item from the server
+
     final url = 'https://api.nstack.in/v1/todos/$id';
     final uri = Uri.parse(url);
     final response = await http.delete(uri);
     if (response.statusCode == 200){
+
       // Remove the item from the list
+
       final filtered = items.where((element) => element['_id'] != id).toList();
       setState(() {
         items = filtered;
@@ -122,7 +153,6 @@ void navigateToEditTaskScreen(){
     }
     else{
       showErrorMessage('Failed to delete the item');
-    
     }
     }
 
@@ -148,20 +178,6 @@ void navigateToEditTaskScreen(){
       isLoading = false;
     });
   }
-
-  
-  // void showSucessMessage(String message){
-  //   final snackBar = SnackBar(
-  //     content: Text(message,
-  //     style: const TextStyle(color: Colors.white),
-      
-  //     ),
-  //     backgroundColor: Colors.green,
-  //   );
-  //   ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  // }
-
-
    void showErrorMessage(String message){
     final snackBar = SnackBar(
       content: Text(message,
