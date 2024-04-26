@@ -13,10 +13,7 @@ const  HomeScreenPage({super.key});
 class _HomeScreenState extends State<HomeScreenPage>{
   bool isLoading = true;
   List items = [];
-
-
   @override
-
   void initState(){
     super.initState();
     fetchTodos();
@@ -28,6 +25,7 @@ class _HomeScreenState extends State<HomeScreenPage>{
         textAlign: TextAlign.center,
         style: TextStyle(color: Colors.white),
         ),
+         backgroundColor: Colors.blueGrey[900],
         centerTitle: true,
       ),
      
@@ -35,7 +33,7 @@ class _HomeScreenState extends State<HomeScreenPage>{
 
       body: Visibility(
         visible: isLoading,
-        child: Center(
+        child: const Center(
           child: CircularProgressIndicator(),
         ),
         replacement: RefreshIndicator(
@@ -50,48 +48,52 @@ class _HomeScreenState extends State<HomeScreenPage>{
             ),
             child: ListView.builder(
               itemCount: items.length,
+              padding: const EdgeInsets.all(10),
               itemBuilder: (context, index){
                 final item = items[index] as Map;
                 final id = item['_id'] as String;
-                return ListTile(
-                  leading: CircleAvatar(
-                    child: Text(
-                      '${index + 1}'
-                      ),
-                      ),
-                  title: Text(item['title']),
-                  subtitle: Text(item['description']),
-                  trailing: PopupMenuButton(
-                    onSelected: (value){
-                      if (value == 'edit'){
-            
-                        //navigate to edit screen
-            
-                        navigateToEditTaskScreen(item);
-                      }
-                      else if (value == 'delete'){
-                        
-                        //delete the item
-                        
-                        deleteById(id);
-            
-            
-                      }
-                    
-                    },
-                    itemBuilder: (context){
-                      return [
-                      const  PopupMenuItem(
-                          child: Text('Edit'),
-                          value: 'edit',
+                return Card(
+
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      child: Text(
+                        '${index + 1}'
                         ),
-                        
-                     const   PopupMenuItem(
-                          child: Text('Delete'),
-                          value: 'delete',
                         ),
-                      ];
-                    },
+                    title: Text(item['title']),
+                    subtitle: Text(item['description']),
+                    trailing: PopupMenuButton(
+                      onSelected: (value){
+                        if (value == 'edit'){
+                              
+                          //navigate to edit screen
+                              
+                          navigateToEditTaskScreen(item);
+                        }
+                        else if (value == 'delete'){
+                          
+                          //delete the item
+                          
+                          deleteById(id);
+                              
+                              
+                        }
+                      
+                      },
+                      itemBuilder: (context){
+                        return [
+                        const  PopupMenuItem(
+                            child: Text('Edit'),
+                            value: 'edit',
+                          ),
+                          
+                       const   PopupMenuItem(
+                            child: Text('Delete'),
+                            value: 'delete',
+                          ),
+                        ];
+                      },
+                    ),
                   ),
                 );
               },
