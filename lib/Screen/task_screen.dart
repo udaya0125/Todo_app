@@ -37,7 +37,7 @@ class _TaskScreenState extends State <TaskScreenPage>{
         textAlign: TextAlign.center,
         style: TextStyle(color: Colors.white),
       ),
-       backgroundColor: Colors.blueGrey[900],
+       backgroundColor: Colors.black12,
       centerTitle: true,
       ),
       body: ListView(
