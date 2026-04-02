@@ -4,7 +4,6 @@
 // import 'package:todo/Screen/task_screen.dart';
 // import 'package:http/http.dart' as http;
 
-
 // class HomeScreenPage extends StatefulWidget{
 // const  HomeScreenPage({super.key});
 // @override
@@ -28,7 +27,7 @@
 //          backgroundColor: Colors.black12,
 //         centerTitle: true,
 //       ),
-     
+
 //       // To add the list of items
 
 //       body: Visibility(
@@ -43,7 +42,7 @@
 //             replacement: Center(
 //               child: Text('No items found',
 //               style: Theme.of(context).textTheme.headline3,
-              
+
 //               ),
 //             ),
 //             child: ListView.builder(
@@ -65,20 +64,19 @@
 //                     trailing: PopupMenuButton(
 //                       onSelected: (value){
 //                         if (value == 'edit'){
-                              
+
 //                           //navigate to edit screen
-                              
+
 //                           navigateToEditTaskScreen(item);
 //                         }
 //                         else if (value == 'delete'){
-                          
+
 //                           //delete the item
-                          
+
 //                           deleteById(id);
-                              
-                              
+
 //                         }
-                      
+
 //                       },
 //                       itemBuilder: (context){
 //                         return [
@@ -86,7 +84,7 @@
 //                             child: Text('Edit'),
 //                             value: 'edit',
 //                           ),
-                          
+
 //                        const   PopupMenuItem(
 //                             child: Text('Delete'),
 //                             value: 'delete',
@@ -122,7 +120,7 @@
 //       fetchTodos();
 //   }
 
-//   //Navigate the page to Add task 
+//   //Navigate the page to Add task
 
 //  Future <void> navigateToAddTaskScreen()async{
 //     final route = MaterialPageRoute(
@@ -170,11 +168,10 @@
 //       setState(() {
 //         items = result;
 //       });
-      
-      
+
 //     }
 //     else{
-      
+
 //     }
 //     setState(() {
 //       isLoading = false;
@@ -184,7 +181,7 @@
 //     final snackBar = SnackBar(
 //       content: Text(message,
 //       style: const TextStyle(color: Colors.white),
-      
+
 //       ),
 //       backgroundColor: Colors.red,
 //     );
@@ -197,7 +194,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:todo/Screen/task_screen.dart';
+import 'package:todo/screen/task_screen.dart';
 
 class HomeScreenPage extends StatefulWidget {
   const HomeScreenPage({super.key});
@@ -208,7 +205,7 @@ class HomeScreenPage extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreenPage> {
   bool isLoading = true;
-  List items = [];
+  List<Map<String, dynamic>> items = [];
   late Timer timer;
 
   @override
@@ -222,7 +219,7 @@ class _HomeScreenState extends State<HomeScreenPage> {
   @override
   void dispose() {
     // Dispose the timer to prevent memory leaks
-    timer?.cancel();
+    timer.cancel();
     super.dispose();
   }
 
@@ -249,14 +246,14 @@ class _HomeScreenState extends State<HomeScreenPage> {
             replacement: Center(
               child: Text(
                 'No items found',
-                style: Theme.of(context).textTheme.headline3,
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
             child: ListView.builder(
               itemCount: items.length,
               padding: const EdgeInsets.all(10),
               itemBuilder: (context, index) {
-                final item = items[index] as Map;
+                final item = items[index];
                 final id = item['_id'] as String;
                 return Card(
                   child: ListTile(
@@ -305,6 +302,7 @@ class _HomeScreenState extends State<HomeScreenPage> {
       builder: (context) => TaskScreenPage(todo: item),
     );
     await Navigator.push(context, route);
+    if (!mounted) return;
     setState(() {
       isLoading = true;
     });
@@ -316,6 +314,7 @@ class _HomeScreenState extends State<HomeScreenPage> {
       builder: (context) => TaskScreenPage(),
     );
     await Navigator.push(context, route);
+    if (!mounted) return;
     setState(() {
       isLoading = true;
     });
@@ -325,13 +324,19 @@ class _HomeScreenState extends State<HomeScreenPage> {
   Future<void> deleteById(String id) async {
     final url = 'https://api.nstack.in/v1/todos/$id';
     final uri = Uri.parse(url);
-    final response = await http.delete(uri);
-    if (response.statusCode == 200) {
-      final filtered = items.where((element) => element['_id'] != id).toList();
-      setState(() {
-        items = filtered;
-      });
-    } else {
+    try {
+      final response = await http.delete(uri);
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final filtered =
+            items.where((element) => element['_id'] != id).toList();
+        setState(() {
+          items = filtered;
+        });
+      } else {
+        showErrorMessage('Failed to delete the item');
+      }
+    } catch (_) {
       showErrorMessage('Failed to delete the item');
     }
   }
@@ -339,22 +344,33 @@ class _HomeScreenState extends State<HomeScreenPage> {
   Future<void> fetchTodos() async {
     final url = 'https://api.nstack.in/v1/todos?page=1&limit=10';
     final uri = Uri.parse(url);
-    final response = await http.get(uri);
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map;
-      final result = json['items'] as List;
-      setState(() {
-        items = result;
-      });
-    } else {
+
+    try {
+      final response = await http.get(uri);
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final result = (json['items'] as List)
+            .map((item) => item as Map<String, dynamic>)
+            .toList();
+        if (!mounted) return;
+        setState(() {
+          items = result;
+        });
+      } else {
+        showErrorMessage('Failed to fetch data');
+      }
+    } catch (_) {
       showErrorMessage('Failed to fetch data');
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+      });
     }
-    setState(() {
-      isLoading = false;
-    });
   }
 
   void showErrorMessage(String message) {
+    if (!mounted) return;
     final snackBar = SnackBar(
       content: Text(
         message,
